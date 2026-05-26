@@ -100,7 +100,19 @@ export default function SearchPanel({
           whileTap={{ scale: 0.97 }}
         >
           <FiSearch />
-          {isRouting ? 'Optimizing route' : 'Find Route'}
+          {isRouting ? (
+            <span className="flex items-center gap-2">
+              <motion.span
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+              >
+                ⟳
+              </motion.span>
+              Analyzing route…
+            </span>
+          ) : (
+            'Find Route'
+          )}
         </motion.button>
 
         {route && (

@@ -4,6 +4,13 @@ import { useEffect, useRef } from 'react';
 const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const TILE_ATTRIBUTION = '&copy; OpenStreetMap contributors';
 
+// Visualization duration based on speed setting (in milliseconds)
+const ANIMATION_DURATIONS = {
+  slow: 4000,
+  medium: 2000,
+  fast: 800,
+};
+
 function createMarkerIcon(type) {
   const label = type === 'source' ? 'A' : 'B';
 
@@ -30,7 +37,7 @@ function addMarker(layer, location, type) {
     .addTo(layer);
 }
 
-export default function NavigationMap({ center, source, destination, route }) {
+export default function NavigationMap({ center, source, destination, route, visualizationSpeed = 'medium' }) {
   const mapRef = useRef(null);
   const containerRef = useRef(null);
   const markerLayerRef = useRef(null);
@@ -82,25 +89,32 @@ export default function NavigationMap({ center, source, destination, route }) {
 
     if (!route) return;
 
+    // Render traffic segments with actual road geometry
     route.trafficSegments.forEach((segment) => {
       L.polyline(segment.coordinates, {
         color: segment.traffic.color,
         weight: segment.traffic.level === 'heavy' ? 7 : 5,
         opacity: segment.traffic.level === 'low' ? 0.5 : 0.72,
         lineCap: 'round',
+        lineJoin: 'round',
         className: 'traffic-road',
       }).addTo(trafficLayerRef.current);
     });
 
+    // Fit map bounds to route
     const coordinates = route.route.coordinates;
     const bounds = L.latLngBounds(coordinates);
     mapRef.current.fitBounds(bounds, { padding: [90, 90], maxZoom: 15, animate: true, duration: 0.8 });
 
+    // Progressive route reveal animation based on visualization speed
+    const animationDuration = ANIMATION_DURATIONS[visualizationSpeed] || ANIMATION_DURATIONS.medium;
+    
     const glowLine = L.polyline([], {
       color: '#e9edc9',
       weight: 14,
       opacity: 0.7,
       lineCap: 'round',
+      lineJoin: 'round',
       className: 'route-glow',
     }).addTo(routeLayerRef.current);
 
@@ -109,15 +123,15 @@ export default function NavigationMap({ center, source, destination, route }) {
       weight: 7,
       opacity: 1,
       lineCap: 'round',
+      lineJoin: 'round',
       className: 'route-active',
     }).addTo(routeLayerRef.current);
 
     let frameId;
     const start = performance.now();
-    const duration = 1100;
 
     function draw(now) {
-      const progress = Math.min(1, (now - start) / duration);
+      const progress = Math.min(1, (now - start) / animationDuration);
       const visibleCount = Math.max(2, Math.ceil(progress * coordinates.length));
       const visibleCoordinates = coordinates.slice(0, visibleCount);
 
@@ -131,7 +145,7 @@ export default function NavigationMap({ center, source, destination, route }) {
 
     frameId = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(frameId);
-  }, [route]);
+  }, [route, visualizationSpeed]);
 
   return <div ref={containerRef} className="absolute inset-0 z-0 h-full w-full" aria-label="Traffix map" />;
 }

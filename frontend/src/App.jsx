@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FiDownload, FiRefreshCw, FiWifi } from 'react-icons/fi';
+import { FiDownload, FiRefreshCw, FiWifi, FiZap } from 'react-icons/fi';
 import NavigationMap from './components/map/NavigationMap';
 import SearchPanel from './components/search/SearchPanel';
 import RouteSummary from './components/route/RouteSummary';
@@ -19,6 +19,7 @@ export default function App() {
   const [error, setError] = useState('');
   const [installPrompt, setInstallPrompt] = useState(null);
   const [lastTrafficUpdate, setLastTrafficUpdate] = useState(null);
+  const [visualizationSpeed, setVisualizationSpeed] = useState('medium');
 
   useEffect(() => {
     const handler = (event) => {
@@ -96,6 +97,7 @@ export default function App() {
         destination={destination}
         route={route}
         source={source}
+        visualizationSpeed={visualizationSpeed}
       />
 
       <motion.header
@@ -137,7 +139,7 @@ export default function App() {
         >
           <h1 className="text-5xl font-black leading-tight text-clay xl:text-6xl">Traffix</h1>
           <p className="mx-auto mt-3 max-w-2xl text-base font-semibold leading-7 text-clay/80">
-            Premium shortest-path and traffic-aware routing powered by Dijkstra.
+            Premium smart navigation with real road routing and traffic-aware pathfinding.
           </p>
         </motion.div>
       </section>
@@ -173,6 +175,36 @@ export default function App() {
 
       <div className="fixed bottom-6 left-[440px] z-30 hidden items-center gap-3 xl:flex">
         <TrafficLegend />
+        {route && (
+          <motion.div
+            className="glass-panel flex items-center gap-2 rounded-full px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-clay"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <FiZap />
+            Animation
+          </motion.div>
+        )}
+        {route && (
+          <div className="glass-panel flex items-center gap-2 rounded-full px-4 py-2">
+            {['slow', 'medium', 'fast'].map((speed) => (
+              <motion.button
+                key={speed}
+                type="button"
+                onClick={() => setVisualizationSpeed(speed)}
+                className={`rounded-full px-3 py-1 text-xs font-black uppercase transition-all ${
+                  visualizationSpeed === speed
+                    ? 'bg-sage text-ivory shadow-panel'
+                    : 'text-clay hover:bg-sage/20'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {speed}
+              </motion.button>
+            ))}
+          </div>
+        )}
         {route && (
           <motion.button
             type="button"
